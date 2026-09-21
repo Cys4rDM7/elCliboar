@@ -216,37 +216,49 @@ class EllinboardT(tk.Tk):
         self.search_results = []
         self.current_result_index = 0
 
+        self.ui_scale = 1.0
         self.title(f"{TRANSLATIONS[self.current_lang]['app_title']} - v{APP_VERSION}")
-        self.geometry("420x560")
-        self.resizable(False, False)
+        self.geometry("768x864")
+        self.minsize(560, 620)
+        self.resizable(True, True)
 
         self.notebook = ttk.Notebook(self)
-        self.form_frame = tk.Frame(self)
-        self.list_frame = tk.Frame(self)
+        self.form_frame = tk.Frame(self, padx=4, pady=4)
+        self.list_frame = tk.Frame(self, padx=4, pady=4)
         self.notebook.add(self.form_frame, text=TRANSLATIONS[self.current_lang]["tab_form"])
         self.notebook.add(self.list_frame, text=TRANSLATIONS[self.current_lang]["tab_list"])
-        self.notebook.pack(fill="both", expand=True)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.notebook.grid(row=1, column=0, sticky="nsew")
+        self.footer_frame = tk.Frame(self)
+        self.footer_frame.grid(row=2, column=0, sticky="ew", padx=8, pady=(0, 6))
+        self.footer_frame.grid_columnconfigure(0, weight=1)
+        self.credits_frame = tk.Frame(self.footer_frame)
+        self.credits_frame.grid(row=0, column=0, sticky="w")
+        self.form_frame.grid_columnconfigure(0, minsize=90)
+        self.form_frame.grid_columnconfigure(1, weight=1)
+        self.form_frame.grid_columnconfigure(2, minsize=120)
 
         self.signature_label = tk.Label(
-            self,
+            self.credits_frame,
             text="César Díaz Menes",
             fg="#7b7b7b",
             font=("TkDefaultFont", 7),
             anchor="sw",
         )
-        self.signature_label.place(x=8, y=526)
+        self.signature_label.grid(row=0, column=0, sticky="w")
 
         self.license_label = tk.Label(
-            self,
+            self.credits_frame,
             text="GPLv3",
             fg="#8a8a8a",
             font=("TkDefaultFont", 6),
             anchor="sw",
         )
-        self.license_label.place(x=8, y=540)
+        self.license_label.grid(row=1, column=0, sticky="w")
 
-        self.language_frame = tk.Frame(self)
-        self.language_frame.pack(anchor="ne", padx=12, pady=(8, 0))
+        self.language_frame = tk.Frame(self.footer_frame)
+        self.language_frame.grid(row=0, column=1, rowspan=2, sticky="e")
         self.language_var = tk.StringVar(value="Español")
         self.lang_labels = {"es": "Español", "en": "English"}
         self.lang_combo = ttk.Combobox(
@@ -270,6 +282,28 @@ class EllinboardT(tk.Tk):
         self.create_list_widgets()
         self.apply_language(self.current_lang)
 
+    def calculate_ui_scale(self):
+        try:
+            dpi = self.winfo_fpixels("1i")
+        except Exception:
+            dpi = 96
+
+        if dpi >= 144:
+            return 1.15
+        if dpi >= 120:
+            return 1.08
+        return 1.0
+
+    def scale(self, value):
+        return max(1, round(value * self.ui_scale))
+
+    def place_scaled(self, widget, **kwargs):
+        scaled = {
+            key: self.scale(value) if key in {"x", "y", "width", "height"} else value
+            for key, value in kwargs.items()
+        }
+        widget.place(**scaled)
+
     def change_language(self, event=None):
         selected = self.language_var.get()
         language = "es" if selected == "Español" else "en" if selected == "English" else self.current_lang
@@ -279,7 +313,7 @@ class EllinboardT(tk.Tk):
         texts = TRANSLATIONS[self.current_lang]
         help_window = tk.Toplevel(self)
         help_window.title(texts["help_title"])
-        help_window.geometry("390x250")
+        help_window.geometry(f"{self.scale(390)}x{self.scale(250)}")
         help_window.resizable(False, False)
         help_window.transient(self)
 
@@ -287,7 +321,7 @@ class EllinboardT(tk.Tk):
             help_window,
             text=texts["help_description"],
             justify="left",
-            wraplength=360,
+            wraplength=self.scale(360),
             anchor="w",
             font=("TkDefaultFont", 9),
         ).pack(fill="x", padx=12, pady=(12, 8))
@@ -295,94 +329,139 @@ class EllinboardT(tk.Tk):
             help_window,
             text=texts["help_usage"],
             justify="left",
-            wraplength=360,
+            wraplength=self.scale(360),
             anchor="w",
             font=("TkDefaultFont", 9),
         ).pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
     def create_form_widgets(self):
         self.labels["client"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_client"])
-        self.labels["client"].place(x=10, y=10)
         self.labels["address"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_address"])
-        self.labels["address"].place(x=10, y=40)
         self.labels["ticket"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_ticket"])
-        self.labels["ticket"].place(x=10, y=70)
         self.labels["contact"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_contact"])
-        self.labels["contact"].place(x=10, y=100)
         self.labels["phone"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_phone"])
-        self.labels["phone"].place(x=10, y=130)
         self.labels["asset"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_asset"])
-        self.labels["asset"].place(x=10, y=190)
         self.labels["problem"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_problem"])
-        self.labels["problem"].place(x=10, y=220)
         self.labels["note"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_note"])
-        self.labels["note"].place(x=10, y=380)
 
         self.textBox1 = tk.Entry(self.form_frame)
-        self.textBox1.place(x=88, y=10, width=220)
         self.textBox2 = tk.Entry(self.form_frame)
-        self.textBox2.place(x=88, y=40, width=220)
         self.textBox3 = tk.Entry(self.form_frame)
-        self.textBox3.place(x=90, y=70, width=165)
         self.textBox4 = tk.Entry(self.form_frame)
-        self.textBox4.place(x=90, y=100, width=165)
         self.textBox5 = tk.Entry(self.form_frame)
-        self.textBox5.place(x=90, y=130, width=165)
         self.textBox6 = tk.Entry(self.form_frame)
-        self.textBox6.place(x=90, y=160, width=280)
         self.textBox7 = tk.Entry(self.form_frame)
-        self.textBox7.place(x=90, y=190, width=280)
         self.textBox8 = tk.Entry(self.form_frame)
-        self.textBox8.place(x=90, y=380, width=180)
 
         self.richTextBox1 = tk.Text(self.form_frame, height=2, width=35)
-        self.richTextBox1.place(x=90, y=220, width=280, height=50)
         self.richTextBox2 = tk.Text(self.form_frame, height=5, width=35)
-        self.richTextBox2.place(x=90, y=290, width=280, height=70)
 
         self.checkBox1_var = tk.BooleanVar()
-        self.checkBox1 = tk.Checkbutton(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_solved"], variable=self.checkBox1_var)
-        self.checkBox1.place(x=10, y=290)
-
+        self.checkBox1 = tk.Checkbutton(
+            self.form_frame,
+            text=TRANSLATIONS[self.current_lang]["label_solved"],
+            variable=self.checkBox1_var,
+            font=("TkDefaultFont", 11),
+        )
         self.checkBox2_var = tk.BooleanVar()
-        self.checkBox2 = tk.Checkbutton(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_serial"], variable=self.checkBox2_var)
-        self.checkBox2.place(x=10, y=160)
+        self.checkBox2 = tk.Checkbutton(
+            self.form_frame,
+            text=TRANSLATIONS[self.current_lang]["label_serial"],
+            variable=self.checkBox2_var,
+            font=("TkDefaultFont", 11),
+        )
 
         self.bottom_frame = tk.Frame(self.form_frame, height=56)
-        self.bottom_frame.pack(side="bottom", fill="x", padx=(0, 46), pady=(4, 0))
-        self.bottom_frame.pack_propagate(False)
+        self.bottom_frame.grid(row=14, column=0, columnspan=2, sticky="ew", padx=(0, 8), pady=(4, 0))
+        self.bottom_frame.grid_propagate(False)
 
         self.checkBox3_var = tk.BooleanVar()
-        self.checkBox3 = tk.Checkbutton(self.bottom_frame, text=TRANSLATIONS[self.current_lang]["label_no_invoice"], variable=self.checkBox3_var)
+        self.checkBox3 = tk.Checkbutton(
+            self.bottom_frame,
+            text=TRANSLATIONS[self.current_lang]["label_no_invoice"],
+            variable=self.checkBox3_var,
+            font=("TkDefaultFont", 11),
+        )
         self.checkBox3.pack(side="left", padx=6, pady=8)
 
         self.groupBox1 = tk.LabelFrame(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_assistance"])
-        self.groupBox1.place(x=262, y=70, width=110, height=82)
         self.radio_var = tk.StringVar(value="Lab")
         self.radioButton3 = tk.Radiobutton(self.groupBox1, text=TRANSLATIONS[self.current_lang]["radio_lab"], variable=self.radio_var, value="Lab")
-        self.radioButton3.place(x=6, y=2)
         self.radioButton1 = tk.Radiobutton(self.groupBox1, text=TRANSLATIONS[self.current_lang]["radio_remote"], variable=self.radio_var, value="Remoto")
-        self.radioButton1.place(x=6, y=20)
         self.radioButton2 = tk.Radiobutton(self.groupBox1, text=TRANSLATIONS[self.current_lang]["radio_client"], variable=self.radio_var, value="Cliente")
-        self.radioButton2.place(x=6, y=38)
 
-        self.button1 = tk.Button(self.bottom_frame, text=TRANSLATIONS[self.current_lang]["label_save"], command=self.button1_click)
-        self.button2 = tk.Button(self.bottom_frame, text=TRANSLATIONS[self.current_lang]["label_clear"], command=self.button2_click)
+        self.action_frame = tk.Frame(self.form_frame)
+        self.action_frame.grid(row=14, column=2, sticky="e", padx=(0, 10), pady=(4, 0))
+        self.button1 = tk.Button(
+            self.action_frame,
+            text=TRANSLATIONS[self.current_lang]["label_save"],
+            width=6,
+            command=self.button1_click,
+        )
+        self.button2 = tk.Button(
+            self.action_frame,
+            text=TRANSLATIONS[self.current_lang]["label_clear"],
+            width=6,
+            command=self.button2_click,
+        )
         self.button1.pack(side="right", padx=4, pady=4)
         self.button2.pack(side="right", padx=4, pady=4)
         self.button3 = tk.Button(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_search"], command=self.button3_click)
-        self.button3.place(x=310, y=10, width=60)
         self.button4 = tk.Button(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_next"], command=self.button4_click)
-        self.button4.place(x=310, y=42, width=60)
         self.button5 = tk.Button(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_txt"], command=self.paste_to_txt)
-        self.button5.place(x=320, y=380, width=50)
-
         self.button_copy = tk.Button(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_copy"], command=self.copy_to_clipboard)
-        self.button_copy.place(x=300, y=412, width=70)
+
+        field_rows = [
+            (self.labels["client"], self.textBox1, 0),
+            (self.labels["address"], self.textBox2, 1),
+            (self.labels["ticket"], self.textBox3, 2),
+            (self.labels["contact"], self.textBox4, 3),
+            (self.labels["phone"], self.textBox5, 4),
+            (self.labels["asset"], self.textBox7, 6),
+            (self.labels["problem"], self.richTextBox1, 8),
+            (self.labels["note"], self.textBox8, 12),
+        ]
+        for label, entry, row in field_rows:
+            label.grid(row=row, column=0, sticky="e", padx=(10, 4), pady=4)
+            entry.grid(row=row, column=1, sticky="ew", padx=(0, 8), pady=4)
+
+        self.textBox6.grid(row=5, column=1, sticky="ew", padx=(0, 8), pady=4)
+        self.checkBox2.grid(row=5, column=0, sticky="w", padx=(10, 4), pady=4)
+        self.checkBox1.grid(row=9, column=0, sticky="w", padx=(10, 4), pady=4)
+        self.richTextBox2.grid(row=10, column=1, sticky="nsew", padx=(0, 8), pady=4)
+
+        self.groupBox1.grid(row=2, column=2, rowspan=5, sticky="n", padx=(0, 8), pady=(0, 0))
+        self.radioButton3.grid(row=0, column=0, sticky="w", padx=6, pady=2)
+        self.radioButton1.grid(row=1, column=0, sticky="w", padx=6, pady=2)
+        self.radioButton2.grid(row=2, column=0, sticky="w", padx=6, pady=2)
+
+        self.button3.grid(row=0, column=2, sticky="e", padx=(0, 10), pady=(8, 0))
+        self.button4.grid(row=1, column=2, sticky="e", padx=(0, 10), pady=(4, 0))
+        self.button5.grid(row=12, column=2, sticky="e", padx=(0, 10), pady=(6, 0))
+        self.button_copy.grid(row=13, column=2, sticky="e", padx=(0, 10), pady=(4, 0))
+
+        self.form_frame.grid_rowconfigure(14, weight=0)
+
+        self.form_frame.grid_rowconfigure(10, weight=1)
+        self.form_frame.grid_columnconfigure(1, weight=1)
+
+        self.labels["asset"].grid(row=6, column=0, sticky="e", padx=(10, 4), pady=4)
+        self.textBox7.grid(row=6, column=1, sticky="ew", padx=(0, 8), pady=4)
+        self.labels["problem"].grid(row=8, column=0, sticky="e", padx=(10, 4), pady=4)
+        self.richTextBox1.grid(row=8, column=1, sticky="ew", padx=(0, 8), pady=4)
+        self.labels["note"].grid(row=12, column=0, sticky="e", padx=(10, 4), pady=4)
+        self.textBox8.grid(row=12, column=1, sticky="ew", padx=(0, 8), pady=4)
 
     def create_list_widgets(self):
         cols = ("cliente", "n_aviso", "bien", "averia")
-        self.tree = ttk.Treeview(self.list_frame, columns=cols, show="headings")
+        list_style = ttk.Style(self)
+        list_style.configure("ElCliboar.Treeview", rowheight=34)
+        self.tree = ttk.Treeview(
+            self.list_frame,
+            columns=cols,
+            show="headings",
+            style="ElCliboar.Treeview",
+        )
         headings = [
             ("cliente", TRANSLATIONS[self.current_lang]["label_client_col"]),
             ("n_aviso", TRANSLATIONS[self.current_lang]["label_ticket_col"]),
