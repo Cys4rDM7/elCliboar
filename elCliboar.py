@@ -313,26 +313,30 @@ class EllinboardT(tk.Tk):
         texts = TRANSLATIONS[self.current_lang]
         help_window = tk.Toplevel(self)
         help_window.title(texts["help_title"])
-        help_window.geometry(f"{self.scale(390)}x{self.scale(250)}")
         help_window.resizable(False, False)
         help_window.transient(self)
 
-        tk.Label(
+        description_label = tk.Label(
             help_window,
             text=texts["help_description"],
             justify="left",
-            wraplength=self.scale(360),
+            wraplength=self.scale(480),
             anchor="w",
             font=("TkDefaultFont", 9),
-        ).pack(fill="x", padx=12, pady=(12, 8))
-        tk.Label(
+        )
+        description_label.pack(fill="x", padx=12, pady=(12, 8))
+        usage_label = tk.Label(
             help_window,
             text=texts["help_usage"],
             justify="left",
-            wraplength=self.scale(360),
+            wraplength=self.scale(480),
             anchor="w",
             font=("TkDefaultFont", 9),
-        ).pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        )
+        usage_label.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        help_window.update_idletasks()
+        content_height = description_label.winfo_reqheight() + usage_label.winfo_reqheight() + 32
+        help_window.geometry(f"{self.scale(520)}x{max(self.scale(410), content_height)}")
 
     def create_form_widgets(self):
         self.labels["client"] = tk.Label(self.form_frame, text=TRANSLATIONS[self.current_lang]["label_client"])
